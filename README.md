@@ -1,2 +1,2 @@
-# LfdTermProject
- machine learning project to predict which persons have ASD
+# Project Description
+ * Machine learning project to predict which persons have ASD
