@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
+from sklearn.tree import DecisionTreeClassifier
 import csv
 
 
@@ -10,7 +11,7 @@ def load_train_data():
     train_data = pd.read_csv("data/train.csv")
 
     # Remove zeros from data
-    train_data = train_data.loc[:, (train_data != 0).any(axis=0)]
+    #train_data = train_data.loc[:, (train_data != 0).any(axis=0)]
 
     # Change data to numpy array
     train_data = train_data.values
@@ -30,18 +31,32 @@ def load_test_data():
     test_data = pd.read_csv("data/test.csv")
 
     # Remove zeros from data
-    test_data = test_data.loc[:, (test_data != 0).any(axis=0)]
+    #test_data = test_data.loc[:, (test_data != 0).any(axis=0)]
 
     return test_data.values
+
+def train_using_gini(X_train, X_test, y_train): 
+  
+    # Creating the classifier object 
+    clf_gini = DecisionTreeClassifier(criterion = "gini", 
+            random_state = 100,max_depth=3, min_samples_leaf=5) 
+  
+    # Performing training 
+    clf_gini.fit(X_train, y_train) 
+    return clf_gini 
+
 
 # Load Datas
 train_x, train_y = load_train_data()
 test_x = load_test_data()
 
 # Apply SVC
-clf = SVC(kernel='sigmoid')
-clf.fit(train_x, train_y)
-pred_y = clf.predict(test_x)
+#clf = SVC(kernel='rbf', gamma = 100, C = 100).fit(train_x,train_y)
+#clf.fit(train_x, train_y)
+#pred_y = clf.predict(test_x)
+
+clf_gini = train_using_gini(train_x, test_x,train_y)
+pred_y = clf_gini.predict(test_x)
 
 # Write to submission file
 submission_file = [["ID", "Predicted"]]
