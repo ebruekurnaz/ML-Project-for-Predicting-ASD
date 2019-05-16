@@ -39,7 +39,7 @@ train_x, train_y = load_train_data()
 test_x = load_test_data()
 
 # Apply SVC
-clf = SVC(kernel='linear')
+clf = SVC(kernel='sigmoid')
 clf.fit(train_x, train_y)
 pred_y = clf.predict(test_x)
 
