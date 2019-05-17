@@ -8,6 +8,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA, KernelPCA
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split 
 import csv
 
 
@@ -64,6 +65,9 @@ def train_using_gini(X_train, y_train):
 # Load Datas
 train_x, train_y = load_train_data()
 test_x = load_test_data()
+
+#To generate test set randomly and split it from the data
+#X_train, X_test, y_train, y_test = train_test_split(train_x, train_y, test_size=0.2) 
 
 # Apply SVC
 #clf = SVC(kernel='rbf', gamma = 100, C = 100).fit(train_x,train_y)
