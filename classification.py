@@ -6,7 +6,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, KernelPCA
+from sklearn.ensemble import RandomForestClassifier
 import csv
 
 
@@ -75,15 +76,53 @@ test_x = load_test_data()
 #pred_y = clf_gini.predict(test_x)
 
 #Apply K means
-kmeans = KMeans(n_clusters=3)
-kmeans.fit(train_x,train_y)
+# kmeans = KMeans(n_clusters=3)
+# kmeans.fit(train_x,train_y)
+# pred_y = kmeans.predict(test_x)
 
-pred_y = kmeans.predict(test_x)
+
+results = []
+for i in range(1,120):
+    # pca = PCA(n_components=i)  
+    pca = KernelPCA(n_components=i, kernel='linear')
+    x_train = pca.fit_transform(train_x)
+
+    clf = RandomForestClassifier(max_depth=2, random_state=0)  
+    clf.fit(x_train, train_y)
+
+    # clf = SVC(kernel='sigmoid').fit(train_x,train_y)
+    # clf.fit(x_train, train_y)
+
+    # clf = train_using_gini(x_train, train_y)
+
+    # Predicting the Test set results
+    y_pred = clf.predict(x_train)
+
+
+    print(len(x_train[0]))
+    print('Accuracy {}'.format(accuracy_score(train_y, y_pred)))  
+    results.append([i, accuracy_score(train_y, y_pred)])
+
+results.sort(key = lambda results: results[1], reverse=True) 
+print(results)
+
+pca = KernelPCA(n_components=results[0][0], kernel='cosine')
+# pca = PCA(n_components=results[0][0])
+x_train = pca.fit_transform(train_x)
+clf = RandomForestClassifier(max_depth=2, random_state=0)  
+clf.fit(x_train, train_y)
+
+x_test = pca.transform(test_x)
+print(len(x_test[0]))
+print(len(x_train[0]))
+test_pred = clf.predict(x_test)
+y_pred = clf.predict(x_train)
+print('Accuracy {}'.format(accuracy_score(train_y, y_pred)))  
 
 
 # Write to submission file
 submission_file = [["ID", "Predicted"]]
-for i, prediction in enumerate(pred_y):
+for i, prediction in enumerate(test_pred):
     submission_file.append([i + 1, int(prediction)])
 
 with open('submission.csv', 'w') as csvFile:
