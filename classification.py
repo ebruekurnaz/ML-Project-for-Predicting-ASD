@@ -62,12 +62,36 @@ def train_using_gini(X_train, y_train):
     clf_gini.fit(X_train, y_train) 
     return clf_gini 
 
+def get_pca_results(X, Y, x_test, y_test):
+    results = []
+    for i in range(1,90):
+        # pca = PCA(n_components=i)  
+        pca = KernelPCA(n_components=i, kernel='sigmoid')
+        x_train = pca.fit_transform(X)
+
+        clf = RandomForestClassifier(max_depth=2, random_state=0)  
+        clf.fit(x_train, Y)
+
+        # clf = SVC(kernel='sigmoid').fit(train_x,train_y)
+        # clf.fit(x_train, train_y)
+
+        # clf = train_using_gini(x_train, train_y)
+
+        # Predicting the Test set results
+        x_t = pca.transform(x_test)
+        y_pred = clf.predict(x_t)
+
+        results.append([i, accuracy_score(y_test, y_pred)])
+    results.sort(key = lambda results: results[1], reverse=True) 
+    return results
+
+
 # Load Datas
 train_x, train_y = load_train_data()
 test_x = load_test_data()
 
 #To generate test set randomly and split it from the data
-#X_train, X_test, y_train, y_test = train_test_split(train_x, train_y, test_size=0.2) 
+X_train, X_test, y_train, y_test = train_test_split(train_x, train_y, test_size=0.2) 
 
 # Apply SVC
 #clf = SVC(kernel='rbf', gamma = 100, C = 100).fit(train_x,train_y)
@@ -85,43 +109,21 @@ test_x = load_test_data()
 # pred_y = kmeans.predict(test_x)
 
 
-results = []
-for i in range(1,120):
-    # pca = PCA(n_components=i)  
-    pca = KernelPCA(n_components=i, kernel='linear')
-    x_train = pca.fit_transform(train_x)
-
-    clf = RandomForestClassifier(max_depth=2, random_state=0)  
-    clf.fit(x_train, train_y)
-
-    # clf = SVC(kernel='sigmoid').fit(train_x,train_y)
-    # clf.fit(x_train, train_y)
-
-    # clf = train_using_gini(x_train, train_y)
-
-    # Predicting the Test set results
-    y_pred = clf.predict(x_train)
-
-
-    print(len(x_train[0]))
-    print('Accuracy {}'.format(accuracy_score(train_y, y_pred)))  
-    results.append([i, accuracy_score(train_y, y_pred)])
-
-results.sort(key = lambda results: results[1], reverse=True) 
+results = get_pca_results(X_train, y_train, X_test, y_test)
 print(results)
 
-pca = KernelPCA(n_components=results[0][0], kernel='cosine')
+pca = KernelPCA(n_components=results[0][0], kernel='sigmoid')
 # pca = PCA(n_components=results[0][0])
-x_train = pca.fit_transform(train_x)
-clf = RandomForestClassifier(max_depth=2, random_state=0)  
-clf.fit(x_train, train_y)
+x_train = pca.fit_transform(X_train)
 
-x_test = pca.transform(test_x)
+clf = train_using_gini(x_train, y_train)
+
+x_test = pca.transform(X_test)
 print(len(x_test[0]))
-print(len(x_train[0]))
-test_pred = clf.predict(x_test)
-y_pred = clf.predict(x_train)
-print('Accuracy {}'.format(accuracy_score(train_y, y_pred)))  
+x_kaggle = pca.transform(test_x)
+test_pred = clf.predict(x_kaggle)
+y_pred = clf.predict(x_test)
+print('Accuracy {}'.format(accuracy_score(y_test, y_pred)))  
 
 
 # Write to submission file
