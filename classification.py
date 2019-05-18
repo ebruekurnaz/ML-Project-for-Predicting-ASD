@@ -46,11 +46,11 @@ def load_test_data(features):
 
 def train_random_forest(X_train, y_train):
 
-	# Instantiate rf
+    # Instantiate rf
     rf = RandomForestRegressor(n_estimators=25,
             random_state=2)
             
-	# Fit rf to the training set    
+    # Fit rf to the training set    
     rf.fit(X_train, y_train) 
 
     return rf
@@ -120,24 +120,24 @@ kf = KFold(n_splits = 5)
 overall_accuracy = 0;
 
 for train_index, test_index in kf.split(X):
-	X_train, X_test = X[train_index], X[test_index]
-	y_train, y_test = y[train_index], y[test_index]
+    X_train, X_test = X[train_index], X[test_index]
+    y_train, y_test = y[train_index], y[test_index]
 
-	# results = get_pca_results(X_train, y_train, X_test, y_test)
-	#print(results)
+    # results = get_pca_results(X_train, y_train, X_test, y_test)
+    #print(results)
 
-	# pca = PCA(n_components=results[0][0])
-	# pca = PCA(n_components=results[0][0])
-	# x_train = pca.fit_transform(X_train)
+    # pca = PCA(n_components=results[0][0])
+    # pca = PCA(n_components=results[0][0])
+    # x_train = pca.fit_transform(X_train)
 
-	clf = train_using_gini(X_train, y_train)
-	# x_test = pca.transform(X_test)
+    clf = train_using_gini(X_train, y_train)
+    # x_test = pca.transform(X_test)
     
-	
-	y_pred = clf.predict(X_test)
-	print("TEST: ",  test_index)
-	print('Accuracy {}'.format(accuracy_score(y_test, y_pred)))  
-	overall_accuracy += accuracy_score(y_test, y_pred)
+    
+    y_pred = clf.predict(X_test)
+    print("TEST: ",  test_index)
+    print('Accuracy {}'.format(accuracy_score(y_test, y_pred)))  
+    overall_accuracy += accuracy_score(y_test, y_pred)
 
 
 # pca = PCA(n_components=results[0][0])
