@@ -13,11 +13,13 @@ from sklearn.linear_model import LinearRegression
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.ensemble import AdaBoostClassifier
+from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier
 import csv
 
 
-def load_train_data():
+FT = 110
+
+def load_train_data(features):
     # Read data
     data = pd.read_csv("data/train.csv")
     X = data.iloc[:,0:595]  #independent columns
@@ -30,8 +32,7 @@ def load_train_data():
     #concat two dataframes for better visualization 
     featureScores = pd.concat([dfcolumns,dfscores],axis=1)
     featureScores.columns = ['Specs','Score']  #naming the dataframe columns
-    print(featureScores.nlargest(10,'Score'))  #print 10 best features
-    ft = featureScores.nlargest(200,'Score')
+    ft = featureScores.nlargest(features,'Score')
     features = ft.index.values
     values = ft.values   
     return X.values[:, features], y, features
@@ -83,11 +84,29 @@ def train_logistic_regression(X_train, y_train):
     return logmodel
 
 def train_adaboost(X_train, y_train):
+    '''
+    Fts - Overall
+    149 - 0.64
+    107 - 0.625
+    150 - 0.625
+    '''
     bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=2),
                          algorithm="SAMME",
-                         n_estimators=200, random_state=0)
+                         n_estimators=100, random_state=0)
     bdt.fit(X_train, y_train)
     return bdt
+
+def train_gradient_boost(X_train, y_train):
+    '''
+    Fts - Overall
+    100 - 0.64
+    160 - 0.64
+    410 - 0.64
+    391 - 0.64
+    '''
+    gb = GradientBoostingClassifier(n_estimators=20, learning_rate = 0.5, max_features=2, max_depth = 2, random_state = 0)
+    gb.fit(X_train, y_train)
+    return gb
 
 def calculate_error(mean_val, X):
     return np.sum((mean_val - X) ** 2) / len(X)
@@ -110,51 +129,39 @@ def make_prediction(d_t, knn, rand_forest, x_t, mean_val):
     return pred
 
 # Load Datas
-X, y, features = load_train_data()
-test_x = load_test_data(features)
+acc = []
+for i in range(2,590):
+    X, y, features = load_train_data(i)
+    test_x = load_test_data(features)
 
-#Apply 5-Fold Cross Validation
-kf = KFold(n_splits = 5)
+    #Apply 5-Fold Cross Validation
+    kf = KFold(n_splits = 5)
+
+    overall_accuracy = 0;
+    mean_vector = np.zeros((24,i))
+    index = 0
+    for train_index, test_index in kf.split(X):
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+
+        clf = train_adaboost(X_train, y_train)
+        y_pred = clf.predict(X_test)
+        
+        # print(np.mean(X_train[:,0]))
+        # print(np.mean(X, axis = 1))
+        
+        mean_vector[index] = np.mean(X_test, axis = 0)
+
+        # print('Accuracy {}'.format(accuracy_score(y_test, y_pred)))  
+        overall_accuracy += accuracy_score(y_test, y_pred)
+        index += 1
+    print("Overall Accuracy: " , overall_accuracy/5)
+    acc.append([i, overall_accuracy/5])
+acc.sort(key = lambda acc: acc[1]) 
+print(acc)
+exit()
 
 
-#To generate test set randomly and split it from the data
-#X_train, X_test, y_train, y_test = train_test_split(train_x, train_y, test_size=0.2) 
-
-# Apply SVC
-#clf = SVC(kernel='rbf', gamma = 100, C = 100).fit(train_x,train_y)
-#clf.fit(train_x, train_y)
-#pred_y = clf.predict(test_x)
-
-
-#Apply Decision Tree
-#clf_gini = train_using_gini(train_x, train_y)
-#pred_y = clf_gini.predict(test_x)
-
-#Apply K means
-# kmeans = KMeans(n_clusters=3)
-# kmeans.fit(train_x,train_y)
-# pred_y = kmeans.predict(test_x)
-
-
-overall_accuracy = 0;
-mean_vector = np.zeros((24,200))
-index = 0
-for train_index, test_index in kf.split(X):
-    X_train, X_test = X[train_index], X[test_index]
-    y_train, y_test = y[train_index], y[test_index]
-
-    clf = train_adaboost(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    
-    # print(np.mean(X_train[:,0]))
-    # print(np.mean(X, axis = 1))
-    
-    mean_vector[index] = np.mean(X_test, axis = 0)
-
-    print("TEST: ",  test_index)
-    print('Accuracy {}'.format(accuracy_score(y_test, y_pred)))  
-    overall_accuracy += accuracy_score(y_test, y_pred)
-    index += 1
 
 ''' Decision Tree
 Accuracy 0.3333333333333333
@@ -215,17 +222,16 @@ d_t = train_decision_tree(X, y)
 knn = train_knn(X, y)
 rand_forest = train_random_forest(X, y)
 
-test_pred = clf.predict(test_x)
-
 # Write to submission file
 submission_file = [["ID", "Predicted"]]
-for i in range(len(test_x)):
-    pred = make_prediction(d_t, knn, rand_forest, test_x[i], mean_vector)
-    submission_file.append([i + 1, pred[0]])
+# for i in range(len(test_x)):
+#     pred = make_prediction(d_t, knn, rand_forest, test_x[i], mean_vector)
+#     submission_file.append([i + 1, pred[0]])
 
-
-# for i, prediction in enumerate(test_pred):
-#     submission_file.append([i + 1, int(prediction)])
+clf = train_gradient_boost(X_train, y_train)
+test_pred = clf.predict(test_x)
+for i, prediction in enumerate(test_pred):
+    submission_file.append([i + 1, int(prediction)])
 
 with open('submission.csv', 'w') as csvFile:
     writer = csv.writer(csvFile)
