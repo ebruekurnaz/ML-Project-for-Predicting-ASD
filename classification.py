@@ -47,7 +47,7 @@ def load_test_data(features):
 def train_random_forest(X_train, y_train):
 
     # Instantiate rf
-    rf = RandomForestClassifier(n_estimators=100, random_state=2)
+    rf = RandomForestClassifier(n_estimators=100, random_state=3)
             
     # Fit rf to the training set    
     rf.fit(X_train, y_train) 
@@ -72,15 +72,35 @@ def train_linear_regression(X_train, y_train):
 
 
 def train_knn(X_train, y_train):
-    knn = KNeighborsClassifier(n_neighbors=8)
+    knn = KNeighborsClassifier(n_neighbors=10)
     knn.fit(X_train,y_train)
     return knn
 
 def train_logistic_regression(X_train, y_train):
-    logmodel = LogisticRegression()
+    logmodel = LogisticRegression(solver='lbfgs')
     logmodel.fit(X_train,y_train)
     return logmodel
 
+
+def calculate_error(mean_val, X):
+    return np.sum((mean_val - X) ** 2) / len(X)
+
+
+def make_prediction(d_t, knn, rand_forest, x_t, mean_val):
+    errors = []
+    for i in range(5):
+        errors.append([i + 1, calculate_error(mean_val[i], x_t)])
+    errors.sort(key = lambda errors: errors[1]) 
+
+    pred = []
+    if(errors[0][0] == 1 or errors[0][0] == 2):
+        pred = knn.predict([x_t])
+    elif(errors[0][0] == 3):
+        pred = rand_forest.predict([x_t])
+    else:
+        pred = d_t.predict([x_t])
+
+    return pred
 
 # Load Datas
 X, y, features = load_train_data()
@@ -110,31 +130,86 @@ kf = KFold(n_splits = 5)
 
 
 overall_accuracy = 0;
-mean_vector = []
+mean_vector = np.zeros((24,200))
+index = 0
 for train_index, test_index in kf.split(X):
     X_train, X_test = X[train_index], X[test_index]
     y_train, y_test = y[train_index], y[test_index]
 
-    clf = train_decision_tree(X_train, y_train)    
+    clf = train_random_forest(X_train, y_train)
     y_pred = clf.predict(X_test)
     
     # print(np.mean(X_train[:,0]))
     # print(np.mean(X, axis = 1))
     
-    
+    mean_vector[index] = np.mean(X_test, axis = 0)
 
     print("TEST: ",  test_index)
     print('Accuracy {}'.format(accuracy_score(y_test, y_pred)))  
     overall_accuracy += accuracy_score(y_test, y_pred)
+    index += 1
+
+''' Decision Tree
+Accuracy 0.3333333333333333
+Accuracy 0.5416666666666666
+Accuracy 0.4166666666666667
+Accuracy 0.5
+Accuracy 0.7916666666666666
+Overall Accuracy:  0.5166666666666667
+'''
+
+''' KNN
+Accuracy 0.625
+Accuracy 0.625
+Accuracy 0.5
+Accuracy 0.4166666666666667
+Accuracy 0.5416666666666666
+Overall Accuracy:  0.5583333333333333
+'''
+
+''' RandomForest
+Accuracy 0.5416666666666666
+Accuracy 0.5416666666666666
+Accuracy 0.7083333333333334
+Accuracy 0.4583333333333333
+Accuracy 0.5833333333333334
+Overall Accuracy:  0.5666666666666667
+'''
+
+''' Logistic
+Accuracy 0.4166666666666667
+Accuracy 0.5833333333333334
+Accuracy 0.5833333333333334
+Accuracy 0.5
+Accuracy 0.6666666666666666
+Overall Accuracy:  0.5583333333333333
+'''
+
+''' SVC
+Accuracy 0.5416666666666666
+Accuracy 0.5833333333333334
+Accuracy 0.5416666666666666
+Accuracy 0.4583333333333333
+Accuracy 0.625
+Overall Accuracy:  0.55
+'''
 
 
-clf = train_decision_tree(X, y)
+d_t = train_decision_tree(X, y)
+knn = train_knn(X, y)
+rand_forest = train_random_forest(X, y)
+
 test_pred = clf.predict(test_x)
 
 # Write to submission file
 submission_file = [["ID", "Predicted"]]
-for i, prediction in enumerate(test_pred):
-    submission_file.append([i + 1, int(prediction)])
+for i in range(len(test_x)):
+    pred = make_prediction(d_t, knn, rand_forest, test_x[i], mean_vector)
+    submission_file.append([i + 1, pred[0]])
+
+
+# for i, prediction in enumerate(test_pred):
+#     submission_file.append([i + 1, int(prediction)])
 
 with open('submission.csv', 'w') as csvFile:
     writer = csv.writer(csvFile)
