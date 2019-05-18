@@ -13,6 +13,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import AdaBoostClassifier
 import csv
 
 
@@ -58,7 +59,7 @@ def train_decision_tree(X_train, y_train):
   
     # Creating the classifier object 
     clf_gini = DecisionTreeClassifier(criterion = "gini", 
-            random_state = 100,max_depth=3, min_samples_leaf=5) 
+            random_state = 100, max_depth=3, min_samples_leaf=5) 
   
     # Performing training 
     clf_gini.fit(X_train, y_train) 
@@ -81,6 +82,12 @@ def train_logistic_regression(X_train, y_train):
     logmodel.fit(X_train,y_train)
     return logmodel
 
+def train_adaboost(X_train, y_train):
+    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=2),
+                         algorithm="SAMME",
+                         n_estimators=200, random_state=0)
+    bdt.fit(X_train, y_train)
+    return bdt
 
 def calculate_error(mean_val, X):
     return np.sum((mean_val - X) ** 2) / len(X)
@@ -136,7 +143,7 @@ for train_index, test_index in kf.split(X):
     X_train, X_test = X[train_index], X[test_index]
     y_train, y_test = y[train_index], y[test_index]
 
-    clf = train_random_forest(X_train, y_train)
+    clf = train_adaboost(X_train, y_train)
     y_pred = clf.predict(X_test)
     
     # print(np.mean(X_train[:,0]))
@@ -156,6 +163,15 @@ Accuracy 0.4166666666666667
 Accuracy 0.5
 Accuracy 0.7916666666666666
 Overall Accuracy:  0.5166666666666667
+'''
+
+''' AdaBoost
+Accuracy 0.7083333333333334
+Accuracy 0.5
+Accuracy 0.5416666666666666
+Accuracy 0.4583333333333333
+Accuracy 0.5833333333333334
+Overall Accuracy:  0.5583333333333333
 '''
 
 ''' KNN
