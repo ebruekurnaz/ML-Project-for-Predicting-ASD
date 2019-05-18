@@ -4,13 +4,15 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA, KernelPCA
 from sklearn.model_selection import train_test_split 
 from sklearn.model_selection import KFold
+from sklearn.linear_model import LinearRegression
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
+from sklearn.neighbors import KNeighborsClassifier
 import csv
 
 
@@ -31,8 +33,6 @@ def load_train_data():
     ft = featureScores.nlargest(200,'Score')
     features = ft.index.values
     values = ft.values   
-
-    print(np.sum(values[:,-1]))
     return X.values[:, features], y, features
 
 
@@ -47,15 +47,14 @@ def load_test_data(features):
 def train_random_forest(X_train, y_train):
 
     # Instantiate rf
-    rf = RandomForestRegressor(n_estimators=25,
-            random_state=2)
+    rf = RandomForestClassifier(n_estimators=100, random_state=2)
             
     # Fit rf to the training set    
     rf.fit(X_train, y_train) 
 
     return rf
 
-def train_using_gini(X_train, y_train): 
+def train_decision_tree(X_train, y_train): 
   
     # Creating the classifier object 
     clf_gini = DecisionTreeClassifier(criterion = "gini", 
@@ -66,28 +65,21 @@ def train_using_gini(X_train, y_train):
     return clf_gini 
 
 
-def get_pca_results(X, Y, x_test, y_test):
-    results = []
-    for i in range(1,90):
-        # pca = PCA(n_components=i)  
-        pca = PCA(n_components=i)
-        x_train = pca.fit_transform(X)
+def train_linear_regression(X_train, y_train):
+    lm = LinearRegression()
+    lm.fit(X_train,y_train)
+    return lm
 
-        clf = train_using_gini(X,Y) 
-        clf.fit(x_train, Y)
 
-        # clf = SVC(kernel='sigmoid').fit(train_x,train_y)
-        # clf.fit(x_train, train_y)
+def train_knn(X_train, y_train):
+    knn = KNeighborsClassifier(n_neighbors=8)
+    knn.fit(X_train,y_train)
+    return knn
 
-        # clf = train_using_gini(x_train, train_y)
-
-        # Predicting the Test set results
-        x_t = pca.transform(x_test)
-        y_pred = clf.predict(x_t)
-
-        results.append([i, accuracy_score(y_test, y_pred)])
-    results.sort(key = lambda results: results[1], reverse=True) 
-    return results
+def train_logistic_regression(X_train, y_train):
+    logmodel = LogisticRegression()
+    logmodel.fit(X_train,y_train)
+    return logmodel
 
 
 # Load Datas
@@ -118,32 +110,25 @@ kf = KFold(n_splits = 5)
 
 
 overall_accuracy = 0;
-
+mean_vector = []
 for train_index, test_index in kf.split(X):
     X_train, X_test = X[train_index], X[test_index]
     y_train, y_test = y[train_index], y[test_index]
 
-    # results = get_pca_results(X_train, y_train, X_test, y_test)
-    #print(results)
-
-    # pca = PCA(n_components=results[0][0])
-    # pca = PCA(n_components=results[0][0])
-    # x_train = pca.fit_transform(X_train)
-
-    clf = train_using_gini(X_train, y_train)
-    # x_test = pca.transform(X_test)
-    
-    
+    clf = train_decision_tree(X_train, y_train)    
     y_pred = clf.predict(X_test)
+    
+    # print(np.mean(X_train[:,0]))
+    # print(np.mean(X, axis = 1))
+    
+    
+
     print("TEST: ",  test_index)
     print('Accuracy {}'.format(accuracy_score(y_test, y_pred)))  
     overall_accuracy += accuracy_score(y_test, y_pred)
 
 
-# pca = PCA(n_components=results[0][0])
-# x_train = pca.fit_transform(X)
-clf = train_using_gini(X, y)
-# test_x = pca.transform(test_x)
+clf = train_decision_tree(X, y)
 test_pred = clf.predict(test_x)
 
 # Write to submission file
