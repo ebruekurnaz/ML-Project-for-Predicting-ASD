@@ -9,31 +9,40 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA, KernelPCA
 from sklearn.model_selection import train_test_split 
 from sklearn.model_selection import KFold
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
 import csv
 
 
 def load_train_data():
     # Read data
-    train_data = pd.read_csv("data/train.csv")
+    data = pd.read_csv("data/train.csv")
+    X = data.iloc[:,0:595]  #independent columns
+    y = data.iloc[:,-1]    #target column i.e price range
 
-    # Change data to numpy array
-    train_data = train_data.values
-    col_size = len(train_data[0]) - 1
+    bestfeatures = SelectKBest(score_func=chi2, k="all")
+    fit = bestfeatures.fit(X,y)
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(X.columns)
+    #concat two dataframes for better visualization 
+    featureScores = pd.concat([dfcolumns,dfscores],axis=1)
+    featureScores.columns = ['Specs','Score']  #naming the dataframe columns
+    print(featureScores.nlargest(10,'Score'))  #print 10 best features
+    ft = featureScores.nlargest(200,'Score')
+    features = ft.index.values
+    values = ft.values   
 
-    # Take last column
-    train_y = train_data[:,col_size]
-
-    # Remove last colum
-    train_x = train_data[:,0:col_size]
-
-    return train_x, train_y
+    print(np.sum(values[:,-1]))
+    return X.values[:, features], y, features
 
 
-def load_test_data():
+def load_test_data(features):
     # Read data
-    test_data = pd.read_csv("data/test.csv")
+    data = pd.read_csv("data/test.csv")
+    X = data.iloc[:,0:595]  #independent columns
+    y = data.iloc[:,-1]    #target column i.e price range
 
-    return test_data.values
+    return X.values[:, features]
 
 def train_random_forest(X_train, y_train):
 
@@ -82,8 +91,8 @@ def get_pca_results(X, Y, x_test, y_test):
 
 
 # Load Datas
-X, y = load_train_data()
-test_x = load_test_data()
+X, y, features = load_train_data()
+test_x = load_test_data(features)
 
 #Apply 5-Fold Cross Validation
 kf = KFold(n_splits = 5)
