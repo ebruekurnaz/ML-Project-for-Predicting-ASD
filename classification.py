@@ -13,6 +13,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
 from sklearn.neighbors import KNeighborsClassifier
+import xgboost as xgb
 from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier
 import csv
 
@@ -83,6 +84,13 @@ def train_logistic_regression(X_train, y_train):
     logmodel.fit(X_train,y_train)
     return logmodel
 
+def train_wgboost(X_train,y_train):
+
+    xg_reg = xgb.XGBClassifier(n__estimators=10, learning_rate = 0.5, max_depth = 2, random_state = 2)
+    xg_reg.fit(X_train,y_train)
+
+    return xg_reg
+
 def train_adaboost(X_train, y_train):
     '''
     Fts - Overall
@@ -146,7 +154,7 @@ for i in range(200,201):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
-        clf = train_adaboost(X_train, y_train)
+        clf = train_wgboost(X_train, y_train)
         y_pred = clf.predict(X_test)
         
         # print(np.mean(X_train[:,0]))
@@ -161,7 +169,7 @@ for i in range(200,201):
     acc.append([i, overall_accuracy/5])
 acc.sort(key = lambda acc: acc[1]) 
 print(acc)
-# exit()
+exit()
 
 ''' Multiple Algorithm
 Accuracy 0.625              (knn)
