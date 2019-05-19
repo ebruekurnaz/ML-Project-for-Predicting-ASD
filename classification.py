@@ -13,7 +13,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.feature_selection import RFE
 import csv
+import xgboost as xgb
 
 
 def load_train_data():
@@ -22,17 +24,26 @@ def load_train_data():
     X = data.iloc[:,0:595]  #independent columns
     y = data.iloc[:,-1]    #target column i.e price range
 
-    bestfeatures = SelectKBest(score_func=chi2, k="all")
-    fit = bestfeatures.fit(X,y)
-    dfscores = pd.DataFrame(fit.scores_)
-    dfcolumns = pd.DataFrame(X.columns)
-    #concat two dataframes for better visualization 
-    featureScores = pd.concat([dfcolumns,dfscores],axis=1)
-    featureScores.columns = ['Specs','Score']  #naming the dataframe columns
-    print(featureScores.nlargest(10,'Score'))  #print 10 best features
-    ft = featureScores.nlargest(200,'Score')
-    features = ft.index.values
-    values = ft.values   
+    # bestfeatures = SelectKBest(score_func=chi2, k="all")
+    # fit = bestfeatures.fit(X,y)
+    # dfscores = pd.DataFrame(fit.scores_)
+    # dfcolumns = pd.DataFrame(X.columns)
+    # #concat two dataframes for better visualization 
+    # featureScores = pd.concat([dfcolumns,dfscores],axis=1)
+    # featureScores.columns = ['Specs','Score']  #naming the dataframe columns
+    # print(featureScores.nlargest(10,'Score'))  #print 10 best features
+    # ft = featureScores.nlargest(200,'Score')
+    # features = ft.index.values
+    # values = ft.values   
+
+    svm = SVC(kernel='linear')
+    # create the RFE model for the svm classifier 
+    # and select attributes
+    rfe = RFE(svm, n_features_to_select=100, verbose =3)
+    rfe = rfe.fit(X, y)
+    # print summaries for the selection of attributes
+    features = rfe.ranking_
+
     return X.values[:, features], y, features
 
 
@@ -58,7 +69,7 @@ def train_decision_tree(X_train, y_train):
   
     # Creating the classifier object 
     clf_gini = DecisionTreeClassifier(criterion = "gini", 
-            random_state = 100,max_depth=3, min_samples_leaf=5) 
+            max_depth=3, min_samples_leaf=5) 
   
     # Performing training 
     clf_gini.fit(X_train, y_train) 
@@ -70,9 +81,16 @@ def train_linear_regression(X_train, y_train):
     lm.fit(X_train,y_train)
     return lm
 
+def train_wgboost(X_train,y_train):
+
+    xg_reg = xgb.XGBClassifier(n__estimators=10, learning_rate = 0.5, max_depth = 2, random_state = 2)
+    xg_reg.fit(X_train,y_train)
+
+    return xg_reg
+
 
 def train_knn(X_train, y_train):
-    knn = KNeighborsClassifier(n_neighbors=8)
+    knn = KNeighborsClassifier(n_neighbors=23, p = 5)
     knn.fit(X_train,y_train)
     return knn
 
@@ -115,18 +133,24 @@ for train_index, test_index in kf.split(X):
     X_train, X_test = X[train_index], X[test_index]
     y_train, y_test = y[train_index], y[test_index]
 
-    clf = train_decision_tree(X_train, y_train)    
-    y_pred = clf.predict(X_test)
-    
-    # print(np.mean(X_train[:,0]))
-    # print(np.mean(X, axis = 1))
-    
-    
+    pca = PCA(n_components = 10)  
+    pca_x = pca.fit_transform(X_train)  
+    pca_test_x = pca.transform(X_test)
+    explained_variance = pca.explained_variance_ratio_ 
+    print("VARIENCES: ",explained_variance) 
+
+    clf = train_decision_tree(pca_x, y_train)  
+    y_pred = clf.predict(pca_test_x)
+
+    # clf = train_knn(X_train, y_train)  
+    # y_pred = clf.predict(X_test)
 
     print("TEST: ",  test_index)
     print('Accuracy {}'.format(accuracy_score(y_test, y_pred)))  
     overall_accuracy += accuracy_score(y_test, y_pred)
 
+
+print("Overall Accuracy: " , overall_accuracy/5)
 
 clf = train_decision_tree(X, y)
 test_pred = clf.predict(test_x)
@@ -140,6 +164,4 @@ with open('submission.csv', 'w') as csvFile:
     writer = csv.writer(csvFile)
     writer.writerows(submission_file)
 
-
-print("Overall Accuracy: " , overall_accuracy/5)
 # print(accuracy_score(train_y,pred_y))
