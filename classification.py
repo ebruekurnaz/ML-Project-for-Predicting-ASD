@@ -146,7 +146,7 @@ for i in range(200,201):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
-        clf = train_gradient_boost(X_train, y_train)
+        clf = train_adaboost(X_train, y_train)
         y_pred = clf.predict(X_test)
         
         # print(np.mean(X_train[:,0]))
@@ -161,9 +161,16 @@ for i in range(200,201):
     acc.append([i, overall_accuracy/5])
 acc.sort(key = lambda acc: acc[1]) 
 print(acc)
-exit()
+# exit()
 
-
+''' Multiple Algorithm
+Accuracy 0.625              (knn)
+Accuracy 0.625              (knn)
+Accuracy 0.7083333333333334 (rand_forest)
+Accuracy 0.75               (grad)
+Accuracy 0.7916666666666666 (Decision_tree)
+Overall Accuracy:  Na
+'''
 
 ''' Decision Tree
 Accuracy 0.3333333333333333
