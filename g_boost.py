@@ -74,7 +74,7 @@ for i in range(299, 300):
     X, y, features = load_train_data(i)
 
     #Apply 5-Fold Cross Validation
-    kf = KFold(n_splits=5)
+    kf = KFold(n_splits=10)
 
     overall_accuracy = 0
     mean_vector = np.zeros((24, i))
@@ -91,7 +91,7 @@ for i in range(299, 300):
     test_x = load_test_data(features)
     g_boost = train_gradient_boost(X, y)
     pred = g_boost.predict(test_x)
-    print("Overall Accuracy: ", overall_accuracy / 5)
+    print("Overall Accuracy: ", overall_accuracy / 10)
     acc.append([i, calc_accurancy(pred)])
 acc.sort(key=lambda acc: acc[1])
 print(acc)
