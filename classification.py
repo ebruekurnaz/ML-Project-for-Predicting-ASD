@@ -201,7 +201,6 @@ for i in range(200, 201):
 
         clf = train_knn(X_train, y_train)
         y_pred = clf.predict(X_test)
-
         # print(np.mean(X_train[:,0]))
         # print(np.mean(X, axis = 1))
 
