@@ -1,0 +1,22 @@
+Main project code is project.py.
+Other python files are used for testing algorithms and calculating overall accuracy to select best ml tools for this project.
+
+To run project.py, first you need to install python3. After that you need to install all neccessary python libraries.
+Run `pip install -r requirements.txt` to install libraries. If it is not working, install libraries one by one.
+
+After the installing packages, run project.py
+`python project.py`
+
+It produces output to submission.csv .
+
+Folder Hierarchy to load test and train samples:
+Project/
+    How_to_run.txt
+    requirements.txt
+    helper.py
+    SIMLR.py
+    testing.py
+    project.py (Main Code)
+    data/
+        test.csv
+        train.csv

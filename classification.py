@@ -40,7 +40,7 @@ def load_train_data(features):
 
 def load_test_data(features):
     # Read data
-    data = pd.read_csv("data/test.csv")
+    data = pd.read_csv("data/test2.csv")
     X = data.iloc[:, 0:595]  #independent columns
     y = data.iloc[:, -1]  #target column i.e price range
 
